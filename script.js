@@ -6,11 +6,27 @@
  */
 
 (function () {
-    let INTERVAL = 70;
+    let INTERVAL = 180; // Set to 180 seconds (3 minutes)
     let attempts = 0;
     let running = true;
 
     const log = (msg) => console.log('[ORACLE-RETRY] ' + msg);
+
+    // Beep function to alert on success
+    function beep(frequency = 440, duration = 200) {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.value = frequency;
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start();
+        osc.stop(ctx.currentTime + duration / 1000);
+    }
 
     window.stopRetry = () => {
         running = false;
@@ -44,7 +60,7 @@
         setTimeout(() => {
             const text = document.body.innerText.toLowerCase();
 
-            if (text.includes('out of capacity') || text.includes('Out of capacity')) {
+            if (text.includes('out of capacity')) {
                 log('  ❌ Out of capacity');
                 setTimeout(retry, INTERVAL * 1000);
                 log(' >> Trying again in ' + INTERVAL + 's...');
@@ -54,6 +70,7 @@
                 text.includes('work request')
             ) {
                 log('🎉 SUCCESS! Instance created!');
+                beep(440, 600000); // Triggers the 10-minute alert beep
                 running = false;
             } else {
                 log('  ⏳ Unknown response - retrying');
